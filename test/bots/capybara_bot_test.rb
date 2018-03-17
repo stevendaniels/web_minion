@@ -22,6 +22,8 @@ class CapybaraBotTest < Minitest::Test
     @select_test_file = "#{file_path}/select_test.html"
     @radio_test_file = "#{file_path}/radio_button_test.html"
     @input_test_file = "#{file_path}/input_test.html"
+    @input_textarea_test_file = "#{file_path}/input_textarea_test.html"
+
     @checkbox_test_file = "#{file_path}/checkbox_test.html"
     @multiple_form_file = "#{file_path}/multiple_forms_test.html"
     @file_upload_file = "#{file_path}/file_upload_test.html"
@@ -113,6 +115,13 @@ class CapybaraBotTest < Minitest::Test
     assert_equal "Andrew", el.find("input[name='Username']").value
   end
 
+  def test_fill_in_textarea
+    @bot.execute_step(:go, @input_textarea_test_file)
+    form = @bot.execute_step(:get_form, id: "form_id")
+    el = @bot.execute_step(:fill_in_input, { name: "Username" }, "Andrew", form)
+    assert_equal "Andrew", el.find("[name='Username']").value
+  end
+
   def test_select_first_radio_button
     @bot.execute_step(:go, @radio_test_file)
     form = @bot.execute_step(:get_form, id: "form_id")
@@ -146,6 +155,15 @@ class CapybaraBotTest < Minitest::Test
 
     form_two = @bot.execute_step(:get_form, "last")
     assert_equal "form_two", form_two[:id]
+  end
+
+  def test_first_last_form_with_single_form
+    @bot.execute_step(:go, @input_test_file)
+    form = @bot.execute_step(:get_form, "first")
+    assert_equal "form_id", form[:id]
+
+    form_two = @bot.execute_step(:get_form, "last")
+    assert_equal "form_id", form_two[:id]
   end
 
   def test_file_upload_functionality

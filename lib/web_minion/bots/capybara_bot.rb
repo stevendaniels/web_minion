@@ -133,15 +133,19 @@ module WebMinion
     def get_form(target, _value, _element)
       if target.is_a?(Hash)
         type, target = target.first
-        return @bot.find(type, target)
-      elsif target.is_a?(String)
-        index = %w(first last).index(target)
-        return @bot.find(target) if index < 0
+        case type.to_sym
+        when :class
+          target = ".#{target}"
+        when :id
+          target = "##{target}"
+        end
+        return @bot.find(target)
+      elsif target.is_a?(String) && %w(first last).include?(target)
+        index = target == "first" ? 0 : -1
+        @bot.find_all("form")[index]
+      else
+        raise "Invalid Target"
       end
-
-      index = target if index < 0
-
-      @bot.find_all("form")[index]
     end
 
     # Finds the form field for a given element.
@@ -151,7 +155,10 @@ module WebMinion
     # @param element [Capybara::Node::Element] the element containing the field
     # @return [Capybara::Node::Element]
     def get_field(target, _value, element)
-      # raise no element passed in? Invalid element?
+      # NOTE: Replace strings with symbols so that Capybara::Node::Element#find_field
+      #       does not throw an "invalid keys" ArgumentError.
+      target = Hash[target.map{|(k,v)| [k.to_sym,v]}]
+
       element.find_field(target)
     end
 
@@ -163,7 +170,7 @@ module WebMinion
     # @return [Capybara::Node::Element]
     def fill_in_input(target, value, element)
       key, input_name = target.first
-      input = element.find("input[#{key}='#{input_name}']")
+      input = element.find("[#{key}='#{input_name}']")
       raise(NoInputFound, "For target: #{target}") unless input
       input.set value
 
@@ -177,7 +184,7 @@ module WebMinion
     # @param element [Capybara::Node::Element] the element
     # @return [nil]
     def submit(_target, _value, element)
-      element.find('input[type="submit"]').click
+      element.find('[type="submit"]').click
     rescue Capybara::ElementNotFound
       element.click
     end
