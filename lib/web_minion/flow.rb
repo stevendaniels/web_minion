@@ -4,6 +4,7 @@ require "web_minion/action"
 require "web_minion/cycle_checker"
 require "web_minion/histories/flow_history"
 require "web_minion/histories/action_history"
+require "web_minion/histories/step_history"
 
 module WebMinion
   # A flow represents the top level watcher of a series of actions that are to
