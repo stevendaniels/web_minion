@@ -8,7 +8,7 @@ module WebMinion
     end
 
     def execute_step(method, target, value = nil, element = nil, values_hash = {})
-      if method == :save_value
+      if [:save_value, :format_saved_value].include?(method)
         method(method).call(target, value, element, values_hash)
       else
         method(method).call(target, value, element)

@@ -26,7 +26,7 @@ module WebMinion
     end
 
     def self.build_via_json(rule_json, vars = {})
-      ruleset = JSON.parse(rule_json)
+      ruleset = JSON.parse(rule_json % vars)
       driver = ruleset["config"]["driver"] || "mechanize"
       bot = if driver == "mechanize"
               MechanizeBot.new(ruleset["config"])
@@ -80,7 +80,7 @@ module WebMinion
 
     def execute_action(action, saved_values = {})
       @curr_action = action
-      @history.action_history << ActionHistory.new(action.name, action.key)
+      @history.action_history << action.history || ActionHistory.new(action.name, action.key)
       status = action.perform(@bot, saved_values)
       update_action_history(status)
       if status

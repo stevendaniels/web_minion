@@ -4,7 +4,7 @@ module WebMinion
   # Represents a group of steps that the bot can perform and valdiate have
   # performed as expected
   class Action
-    attr_reader :name, :key, :steps, :starting_action
+    attr_reader :name, :key, :steps, :starting_action, :history
     attr_accessor :on_success, :on_failure
 
     def initialize(fields = {})
@@ -14,6 +14,7 @@ module WebMinion
       @on_success = fields[:on_success]
       @on_failure = fields[:on_failure]
       send("steps=", fields[:steps])
+      @history = ActionHistory.new(@name, @key)
     end
 
     def self.build_from_hash(fields = {}, vars = {})
@@ -61,6 +62,8 @@ module WebMinion
     def perform(bot, saved_values)
       element = nil
       status = @steps.map do |step|
+        @history.step_history << StepHistory.new(step.name)
+
         if step.validator?
           step.perform(bot, element, saved_values)
         else
@@ -72,6 +75,7 @@ module WebMinion
           nil
         end
       end
+
       !status.reject(&:nil?).include?(false)
     rescue StandardError => e
       puts e

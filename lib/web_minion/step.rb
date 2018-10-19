@@ -29,7 +29,9 @@ module WebMinion
         :value_equals,
         :body_includes,
         :save_page_html,
-        :save_value
+        :save_value,
+        :wait,
+        :format_saved_value
       ]
     }.freeze
 
