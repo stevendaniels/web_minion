@@ -33,6 +33,19 @@ module WebMinion
       @bot.html
     end
 
+    # Waits for the specified period of time
+    # Goes to the provided url
+    #
+    # @param target [String] the target (unused)
+    # @param _value [String] the amount of time to wait
+    # @param _element [Capybara::Node::Element] the element (unused)
+    # @return [true]
+    def wait(_target, value, _element)
+      sleep(value.to_i)
+
+      true
+    end
+
     # Goes to the provided url
     #
     # @param target [String] the target (URL) of the site to visit.
@@ -51,6 +64,8 @@ module WebMinion
     # @return [nil]
     def click(target, _value, _element)
       @bot.click_link_or_button(target)
+    rescue
+      @bot.find(target).click
     end
 
     # Clicks the button in the provided form
@@ -121,6 +136,32 @@ module WebMinion
       val_hash
     end
 
+    # Formats a saved value to integer or float
+    #
+    # @param target [String] the saved value key
+    # @param value [String] the value
+    # @param element [Capybara::Node::Element] the element
+    # @param element [Hash] the saved value hash
+    # @return [Hash]
+    def format_saved_value(target, value, element, val_hash)
+      val_hash[target.to_sym] = val_hash[target.to_sym].first if val_hash[target.to_sym].is_a?(Array)
+      if value["regex"]
+        regex = Regexp.new(value["regex"])
+        val_hash[target.to_sym] = Regexp.last_match[1] if val_hash[target.to_sym].text[regex]
+      else
+        val_hash[target.to_sym] = val_hash[target.to_sym].text
+      end
+
+      case value["type"]
+      when "integer"
+        val_hash[target.to_sym] = val_hash[target.to_sym].gsub(/\D/,'').to_i
+      when "float"
+        val_hash[target.to_sym] = val_hash[target.to_sym].gsub(/[^\d\.]/, '').to_f
+      end
+
+      val_hash
+    end
+
     ## FORM METHODS ##
     # Must have an element passed to them (except get form)
 
@@ -139,7 +180,8 @@ module WebMinion
         when :id
           target = "##{target}"
         end
-        return @bot.find(target)
+
+        @bot.find(target)
       elsif target.is_a?(String) && %w(first last).include?(target)
         index = target == "first" ? 0 : -1
         @bot.find_all("form")[index]
@@ -183,10 +225,10 @@ module WebMinion
     # @param _value [String] the value (unused)
     # @param element [Capybara::Node::Element] the element
     # @return [nil]
-    def submit(_target, _value, element)
+    def submit(target, value, element)
       element.find('[type="submit"]').click
     rescue Capybara::ElementNotFound
-      element.click
+      click(target, value, element) if element.click.nil?
     end
 
     # Selects the options from a <select> input.Clicks/
