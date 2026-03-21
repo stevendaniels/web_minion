@@ -58,16 +58,16 @@ func TestDriverInterface(t *testing.T) {
 // mockDriver satisfies the Driver interface for compile-time verification.
 type mockDriver struct{}
 
-func (m *mockDriver) Navigate(url string) error                             { return nil }
-func (m *mockDriver) Click(sel ResolvedSelector) error                      { return nil }
-func (m *mockDriver) Fill(sel ResolvedSelector, value string) error         { return nil }
-func (m *mockDriver) Submit(sel ResolvedSelector) error                     { return nil }
-func (m *mockDriver) Select(sel ResolvedSelector, value string) error       { return nil }
-func (m *mockDriver) GetText(sel ResolvedSelector) (string, error)          { return "", nil }
-func (m *mockDriver) WaitForSelector(sel ResolvedSelector, t int) error     { return nil }
-func (m *mockDriver) WaitForURL(pattern string, t int) error                { return nil }
-func (m *mockDriver) BodyContains(text string) (bool, error)                { return false, nil }
-func (m *mockDriver) CurrentURL() (string, error)                           { return "", nil }
-func (m *mockDriver) PageHTML() (string, error)                             { return "", nil }
-func (m *mockDriver) Eval(script string) error                              { return nil }
-func (m *mockDriver) Close() error                                          { return nil }
+func (m *mockDriver) Navigate(url string) error                         { return nil }
+func (m *mockDriver) Click(sel ResolvedSelector) error                  { return nil }
+func (m *mockDriver) Fill(sel ResolvedSelector, value string) error     { return nil }
+func (m *mockDriver) Submit(sel ResolvedSelector) error                 { return nil }
+func (m *mockDriver) Select(sel ResolvedSelector, value string) error   { return nil }
+func (m *mockDriver) GetText(sel ResolvedSelector) (string, error)      { return "", nil }
+func (m *mockDriver) WaitForSelector(sel ResolvedSelector, t int) error { return nil }
+func (m *mockDriver) WaitForURL(pattern string, t int) error            { return nil }
+func (m *mockDriver) BodyContains(text string) (bool, error)            { return false, nil }
+func (m *mockDriver) CurrentURL() (string, error)                       { return "", nil }
+func (m *mockDriver) PageHTML() (string, error)                         { return "", nil }
+func (m *mockDriver) Eval(script string) error                          { return nil }
+func (m *mockDriver) Close() error                                      { return nil }

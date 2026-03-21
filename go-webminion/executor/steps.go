@@ -11,18 +11,18 @@ import (
 
 func newStepRegistry() map[string]StepFunc {
 	return map[string]StepFunc{
-		"go":                  stepGo,
-		"get_form":            stepGetForm,
-		"fill_in_input":       stepFillInInput,
-		"click":               stepClick,
-		"submit":              stepSubmit,
-		"select":              stepSelect,
-		"save_value":          stepSaveValue,
-		"format_saved_value":  stepFormatSavedValue,
-		"wait_for_download":   stepWaitForDownload,
-		"wait":                stepWait,
-		"execute_script":      stepExecuteScript,
-		"save_page_html":      stepSavePageHTML,
+		"go":                 stepGo,
+		"get_form":           stepGetForm,
+		"fill_in_input":      stepFillInInput,
+		"click":              stepClick,
+		"submit":             stepSubmit,
+		"select":             stepSelect,
+		"save_value":         stepSaveValue,
+		"format_saved_value": stepFormatSavedValue,
+		"wait_for_download":  stepWaitForDownload,
+		"wait":               stepWait,
+		"execute_script":     stepExecuteScript,
+		"save_page_html":     stepSavePageHTML,
 	}
 }
 

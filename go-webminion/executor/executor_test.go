@@ -10,10 +10,10 @@ import (
 
 // fakeDriver implements driver.Driver for testing without a real browser.
 type fakeDriver struct {
-	navigated []string
-	clicked   []driver.ResolvedSelector
-	filled    []fillCall
-	body      string
+	navigated  []string
+	clicked    []driver.ResolvedSelector
+	filled     []fillCall
+	body       string
 	currentURL string
 }
 
@@ -22,19 +22,25 @@ type fillCall struct {
 	value string
 }
 
-func (f *fakeDriver) Navigate(url string) error                              { f.navigated = append(f.navigated, url); return nil }
-func (f *fakeDriver) Click(sel driver.ResolvedSelector) error                { f.clicked = append(f.clicked, sel); return nil }
-func (f *fakeDriver) Fill(sel driver.ResolvedSelector, v string) error       { f.filled = append(f.filled, fillCall{sel, v}); return nil }
-func (f *fakeDriver) Submit(sel driver.ResolvedSelector) error               { return nil }
-func (f *fakeDriver) Select(sel driver.ResolvedSelector, v string) error     { return nil }
-func (f *fakeDriver) GetText(sel driver.ResolvedSelector) (string, error)    { return "text", nil }
+func (f *fakeDriver) Navigate(url string) error { f.navigated = append(f.navigated, url); return nil }
+func (f *fakeDriver) Click(sel driver.ResolvedSelector) error {
+	f.clicked = append(f.clicked, sel)
+	return nil
+}
+func (f *fakeDriver) Fill(sel driver.ResolvedSelector, v string) error {
+	f.filled = append(f.filled, fillCall{sel, v})
+	return nil
+}
+func (f *fakeDriver) Submit(sel driver.ResolvedSelector) error                 { return nil }
+func (f *fakeDriver) Select(sel driver.ResolvedSelector, v string) error       { return nil }
+func (f *fakeDriver) GetText(sel driver.ResolvedSelector) (string, error)      { return "text", nil }
 func (f *fakeDriver) WaitForSelector(sel driver.ResolvedSelector, t int) error { return nil }
-func (f *fakeDriver) WaitForURL(pattern string, t int) error                 { return nil }
-func (f *fakeDriver) BodyContains(text string) (bool, error)                 { return f.body == text, nil }
-func (f *fakeDriver) CurrentURL() (string, error)                            { return f.currentURL, nil }
-func (f *fakeDriver) PageHTML() (string, error)                              { return "<html/>", nil }
-func (f *fakeDriver) Eval(script string) error                               { return nil }
-func (f *fakeDriver) Close() error                                           { return nil }
+func (f *fakeDriver) WaitForURL(pattern string, t int) error                   { return nil }
+func (f *fakeDriver) BodyContains(text string) (bool, error)                   { return f.body == text, nil }
+func (f *fakeDriver) CurrentURL() (string, error)                              { return f.currentURL, nil }
+func (f *fakeDriver) PageHTML() (string, error)                                { return "<html/>", nil }
+func (f *fakeDriver) Eval(script string) error                                 { return nil }
+func (f *fakeDriver) Close() error                                             { return nil }
 
 func makeInst(actions ...config.Action) *config.Institution {
 	return &config.Institution{
