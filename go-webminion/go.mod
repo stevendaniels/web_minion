@@ -3,6 +3,7 @@ module github.com/stevendaniels/web_minion/go-webminion
 go 1.26.1
 
 require (
+	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/go-rod/rod v0.116.2
 	github.com/zalando/go-keyring v0.2.7

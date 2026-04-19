@@ -1,6 +1,9 @@
 package executor
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -432,6 +435,195 @@ func TestExecutor_Expects_BodyIncludes_NoMatch(t *testing.T) {
 	}
 	if ex.visited["pass"] {
 		t.Error("non-matching body should route to fail")
+	}
+}
+
+// --- write_file tests ---
+
+func TestStepWriteFile_MissingPattern(t *testing.T) {
+	fd := &fakeDriver{}
+	err := runStep(t, fd, config.Step{
+		Method: "write_file",
+		Value:  "some content",
+	})
+	if err == nil {
+		t.Error("expected error for missing pattern, got nil")
+	}
+}
+
+func TestStepWriteFile_MissingValue(t *testing.T) {
+	fd := &fakeDriver{}
+	err := runStep(t, fd, config.Step{
+		Method:  "write_file",
+		Pattern: filepath.Join(t.TempDir(), "out.md"),
+	})
+	if err == nil {
+		t.Error("expected error for missing value (content), got nil")
+	}
+}
+
+func TestStepWriteFile_WritesFile(t *testing.T) {
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "out.txt")
+	fd := &fakeDriver{}
+	err := runStep(t, fd, config.Step{
+		Method:  "write_file",
+		Pattern: dest,
+		Value:   "hello world",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	data, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	if string(data) != "hello world" {
+		t.Errorf("expected 'hello world', got %q", string(data))
+	}
+}
+
+func TestStepWriteFile_UUIDConsistency(t *testing.T) {
+	dir := t.TempDir()
+	fd := &fakeDriver{}
+	err := runStep(t, fd, config.Step{
+		Method:  "write_file",
+		Pattern: filepath.Join(dir, "{{uuid}}.md"),
+		Value:   "id: {{uuid}}",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("read dir: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(entries))
+	}
+
+	name := entries[0].Name()
+	// Strip .md suffix to get the UUID used in the filename.
+	uuid := strings.TrimSuffix(name, ".md")
+
+	data, err := os.ReadFile(filepath.Join(dir, name))
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	want := "id: " + uuid
+	if string(data) != want {
+		t.Errorf("uuid mismatch: filename uuid=%q, content=%q", uuid, string(data))
+	}
+}
+
+// --- wait_for_reply tests ---
+
+func TestStepWaitForReply_MissingPattern(t *testing.T) {
+	fd := &fakeDriver{}
+	err := runStep(t, fd, config.Step{
+		Method:  "wait_for_reply",
+		Value:   "mfa_code",
+		Timeout: 1,
+	})
+	if err == nil {
+		t.Error("expected error for missing pattern, got nil")
+	}
+}
+
+func TestStepWaitForReply_MissingValue(t *testing.T) {
+	fd := &fakeDriver{}
+	err := runStep(t, fd, config.Step{
+		Method:  "wait_for_reply",
+		Pattern: filepath.Join(t.TempDir(), "reply.txt"),
+		Timeout: 1,
+	})
+	if err == nil {
+		t.Error("expected error for missing value (variable name), got nil")
+	}
+}
+
+func TestStepWaitForReply_Timeout(t *testing.T) {
+	fd := &fakeDriver{}
+	err := runStep(t, fd, config.Step{
+		Method:  "wait_for_reply",
+		Pattern: filepath.Join(t.TempDir(), "never-appears.txt"),
+		Value:   "mfa_code",
+		Timeout: 1,
+	})
+	if err == nil {
+		t.Error("expected timeout error, got nil")
+	}
+}
+
+func TestStepWaitForReply_FileAppears(t *testing.T) {
+	dir := t.TempDir()
+	replyPath := filepath.Join(dir, "reply.txt")
+
+	// Write the reply file after a short delay from a goroutine.
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		_ = os.WriteFile(replyPath, []byte("  123456  \n"), 0644)
+	}()
+
+	fd := &fakeDriver{}
+	inst := makeInst(config.Action{
+		Key:      "start",
+		Starting: true,
+		Steps: []config.Step{{
+			Method:  "wait_for_reply",
+			Pattern: replyPath,
+			Value:   "mfa_code",
+			Timeout: 5,
+		}},
+	})
+	ex := newTestExecutor(inst, fd)
+	if err := ex.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	val, err := ex.vars.Resolve("{{mfa_code}}")
+	if err != nil {
+		t.Fatalf("resolve var: %v", err)
+	}
+	if val != "123456" {
+		t.Errorf("expected '123456' (trimmed), got %q", val)
+	}
+
+	if _, err := os.Stat(replyPath); !os.IsNotExist(err) {
+		t.Error("expected reply file to be deleted after reading")
+	}
+}
+
+// --- html_to_markdown tests ---
+
+func TestStepHTMLToMarkdown(t *testing.T) {
+	fd := &fakeDriver{}
+	inst := makeInst(config.Action{
+		Key:      "start",
+		Starting: true,
+		Steps: []config.Step{
+			{Method: "save_page_html", Value: "page_html"},
+			{Method: "html_to_markdown", Value: "page_html"},
+		},
+	})
+	ex := newTestExecutor(inst, fd)
+	if err := ex.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result, err := ex.vars.Resolve("{{page_html}}")
+	if err != nil {
+		t.Fatalf("resolve var: %v", err)
+	}
+	if strings.Contains(result, "<") {
+		t.Errorf("expected no HTML tags in markdown output, got: %q", result)
+	}
+}
+
+func TestStepHTMLToMarkdown_MissingValue(t *testing.T) {
+	fd := &fakeDriver{}
+	if err := runStep(t, fd, config.Step{Method: "html_to_markdown"}); err == nil {
+		t.Error("expected error for missing value (variable name), got nil")
 	}
 }
 

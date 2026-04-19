@@ -133,6 +133,7 @@ func TestStepRegistry_HasAllMethods(t *testing.T) {
 		"go", "get_form", "fill_in_input", "click", "submit",
 		"select", "save_value", "format_saved_value", "wait_for_download",
 		"wait", "execute_script", "save_page_html",
+		"write_file", "html_to_markdown", "wait_for_reply",
 	}
 	for _, method := range expected {
 		if _, ok := registry[method]; !ok {
