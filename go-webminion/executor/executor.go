@@ -17,7 +17,7 @@ type StepFunc func(e *Executor, step config.Step) error
 
 // Executor runs the flow graph defined in an Institution config.
 type Executor struct {
-	inst     *config.Institution
+	inst     *config.Config
 	driver   driver.Driver
 	vault    vault.Vault
 	vars     *interp.Vars
@@ -26,7 +26,7 @@ type Executor struct {
 }
 
 // New creates an Executor. startDate and endDate are used for built-in interpolation vars.
-func New(inst *config.Institution, d driver.Driver, v vault.Vault, startDate, endDate time.Time) *Executor {
+func New(inst *config.Config, d driver.Driver, v vault.Vault, startDate, endDate time.Time) *Executor {
 	return &Executor{
 		inst:     inst,
 		driver:   d,
@@ -84,7 +84,7 @@ func (e *Executor) Run() error {
 	return nil
 }
 
-func findStartingAction(inst *config.Institution) string {
+func findStartingAction(inst *config.Config) string {
 	for _, a := range inst.Flow.Actions {
 		if a.Starting {
 			return a.Key
@@ -93,7 +93,7 @@ func findStartingAction(inst *config.Institution) string {
 	return ""
 }
 
-func findAction(inst *config.Institution, key string) *config.Action {
+func findAction(inst *config.Config, key string) *config.Action {
 	for i := range inst.Flow.Actions {
 		if inst.Flow.Actions[i].Key == key {
 			return &inst.Flow.Actions[i]
@@ -154,4 +154,8 @@ func (e *Executor) evaluateExpects(action *config.Action) bool {
 // resolve interpolates a string value using the executor's Vars.
 func (e *Executor) resolve(s string) (string, error) {
 	return e.vars.Resolve(s)
+}
+
+func (e *Executor) resolveWith(s string, overrides map[string]string) (string, error) {
+	return e.vars.ResolveWith(s, overrides)
 }

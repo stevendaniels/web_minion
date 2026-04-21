@@ -1,5 +1,5 @@
 // Package webminion is the public API for the Go WebMinion automation library.
-// Load a YAML/JSON config, create a Flow, and call Run with a credential Vault.
+// Load a config file and call Run with a credential Vault.
 package webminion
 
 import (
@@ -11,22 +11,21 @@ import (
 	"github.com/stevendaniels/web_minion/go-webminion/vault"
 )
 
-// LoadConfig reads and validates a YAML or JSON config file.
-func LoadConfig(path string) (*config.Institution, error) {
-	return config.LoadConfig(path)
-}
-
-// Flow wraps an Institution config and is the primary entry point for running automations.
+// Flow wraps a validated config and is the primary entry point for running automations.
 type Flow struct {
-	inst      *config.Institution
+	inst      *config.Config
 	startDate time.Time
 	endDate   time.Time
 }
 
-// NewFlow creates a Flow for the given Institution. Date range defaults to today.
-func NewFlow(inst *config.Institution) *Flow {
+// NewFlow loads and validates a YAML or JSON config file, returning a runnable Flow.
+func NewFlow(path string) (*Flow, error) {
+	inst, err := config.LoadConfig(path)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now()
-	return &Flow{inst: inst, startDate: now, endDate: now}
+	return &Flow{inst: inst, startDate: now, endDate: now}, nil
 }
 
 // WithDateRange sets the start and end dates used for built-in interpolation variables.

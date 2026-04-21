@@ -6,11 +6,7 @@ import (
 	"testing"
 )
 
-func TestLoadConfig(t *testing.T) {
-	tmpDir := t.TempDir()
-	configPath := filepath.Join(tmpDir, "test.yaml")
-
-	content := `id: test
+const validYAML = `id: test
 name: Test
 flow:
   actions:
@@ -20,41 +16,40 @@ flow:
         - method: go
           value: https://example.com
 `
-	if err := os.WriteFile(configPath, []byte(content), 0644); err != nil {
+
+func writeConfig(t *testing.T, content string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "test.yaml")
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
-
-	inst, err := LoadConfig(configPath)
-	if err != nil {
-		t.Fatalf("LoadConfig error: %v", err)
-	}
-	if inst.ID != "test" {
-		t.Errorf("expected ID 'test', got '%s'", inst.ID)
-	}
+	return path
 }
 
 func TestNewFlow(t *testing.T) {
-	tmpDir := t.TempDir()
-	configPath := filepath.Join(tmpDir, "test.yaml")
-
-	content := `id: test
-flow:
-  actions:
-    - key: start
-      starting: true
-      steps: []
-`
-	if err := os.WriteFile(configPath, []byte(content), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	inst, err := LoadConfig(configPath)
+	flow, err := NewFlow(writeConfig(t, validYAML))
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("NewFlow error: %v", err)
 	}
-
-	flow := NewFlow(inst)
 	if flow == nil {
 		t.Error("NewFlow returned nil")
+	}
+}
+
+func TestNewFlow_InvalidConfig(t *testing.T) {
+	yaml := `id: test
+flow:
+  actions: []
+`
+	_, err := NewFlow(writeConfig(t, yaml))
+	if err == nil {
+		t.Error("expected error for invalid config (no starting action), got nil")
+	}
+}
+
+func TestNewFlow_MissingFile(t *testing.T) {
+	_, err := NewFlow("/nonexistent/path/config.yaml")
+	if err == nil {
+		t.Error("expected error for missing file, got nil")
 	}
 }

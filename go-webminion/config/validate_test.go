@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestValidateConfig_Valid(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{
@@ -17,7 +17,7 @@ func TestValidateConfig_Valid(t *testing.T) {
 }
 
 func TestValidateConfig_NoStarting(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID:   "test",
 		Flow: Flow{Actions: []Action{{Key: "no_start"}}},
 	}
@@ -28,7 +28,7 @@ func TestValidateConfig_NoStarting(t *testing.T) {
 }
 
 func TestValidateConfig_MultipleStarting(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{
@@ -44,7 +44,7 @@ func TestValidateConfig_MultipleStarting(t *testing.T) {
 }
 
 func TestValidateConfig_DuplicateKeys(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{
@@ -60,9 +60,114 @@ func TestValidateConfig_DuplicateKeys(t *testing.T) {
 }
 
 func TestValidateConfig_NoActions(t *testing.T) {
-	inst := &Institution{ID: "test"}
+	inst := &Config{ID: "test"}
 	errs := ValidateConfig(inst)
 	if len(errs) == 0 {
 		t.Error("expected error for empty actions, got none")
+	}
+}
+
+func TestValidateStep_WriteFile_MissingPattern(t *testing.T) {
+	inst := &Config{
+		ID: "test",
+		Flow: Flow{Actions: []Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []Step{{Method: "write_file", Value: "/tmp/reply.txt"}},
+		}}},
+	}
+	errs := ValidateConfig(inst)
+	if len(errs) == 0 {
+		t.Error("expected error for write_file missing pattern")
+	}
+}
+
+func TestValidateStep_WriteFile_MissingValue(t *testing.T) {
+	inst := &Config{
+		ID: "test",
+		Flow: Flow{Actions: []Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []Step{{Method: "write_file", Pattern: "/dispatches/out"}},
+		}}},
+	}
+	errs := ValidateConfig(inst)
+	if len(errs) == 0 {
+		t.Error("expected error for write_file missing value")
+	}
+}
+
+func TestValidateStep_WaitForReply_MissingPattern(t *testing.T) {
+	inst := &Config{
+		ID: "test",
+		Flow: Flow{Actions: []Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []Step{{Method: "wait_for_reply", Value: "mfa_code"}},
+		}}},
+	}
+	errs := ValidateConfig(inst)
+	if len(errs) == 0 {
+		t.Error("expected error for wait_for_reply missing pattern")
+	}
+}
+
+func TestValidateStep_WaitForReply_MissingValue(t *testing.T) {
+	inst := &Config{
+		ID: "test",
+		Flow: Flow{Actions: []Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []Step{{Method: "wait_for_reply", Pattern: "/dispatches/web-minion-in/reply.txt"}},
+		}}},
+	}
+	errs := ValidateConfig(inst)
+	if len(errs) == 0 {
+		t.Error("expected error for wait_for_reply missing value")
+	}
+}
+
+func TestValidateStep_WaitForReply_NegativeTimeout(t *testing.T) {
+	inst := &Config{
+		ID: "test",
+		Flow: Flow{Actions: []Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []Step{{Method: "wait_for_reply", Pattern: "/tmp/r.txt", Value: "v", Timeout: -1}},
+		}}},
+	}
+	errs := ValidateConfig(inst)
+	if len(errs) == 0 {
+		t.Error("expected error for negative timeout")
+	}
+}
+
+func TestValidateStep_WriteFile_Valid(t *testing.T) {
+	inst := &Config{
+		ID: "test",
+		Flow: Flow{Actions: []Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []Step{{Method: "write_file", Pattern: "/downloads/out.md", Value: "{{page_html}}"}},
+		}}},
+	}
+	errs := ValidateConfig(inst)
+	if len(errs) != 0 {
+		t.Errorf("expected no errors for valid write_file, got: %v", errs)
+	}
+}
+
+func TestValidateStep_HTMLToMarkdown_MissingValue(t *testing.T) {
+	inst := &Config{
+		ID: "test",
+		Flow: Flow{Actions: []Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []Step{{Method: "html_to_markdown"}},
+		}}},
+	}
+	errs := ValidateConfig(inst)
+	if len(errs) == 0 {
+		t.Error("expected error for html_to_markdown missing value")
 	}
 }

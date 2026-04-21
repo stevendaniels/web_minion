@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestConfigTypes(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{

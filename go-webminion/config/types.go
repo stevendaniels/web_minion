@@ -1,7 +1,7 @@
 package config
 
-// Institution is the top-level config for a single automation target.
-type Institution struct {
+// Config is the top-level config for a single automation target.
+type Config struct {
 	ID                  string `yaml:"id"                    json:"id"`
 	Name                string `yaml:"name"                  json:"name"`
 	BaseURL             string `yaml:"base_url"              json:"base_url"`
