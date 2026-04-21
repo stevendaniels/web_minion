@@ -3,6 +3,7 @@ package executor
 import (
 	"crypto/rand"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -201,10 +202,6 @@ func stepSavePageHTML(e *Executor, step config.Step) error {
 	return e.vars.Set(key, html)
 }
 
-// stepWriteFile writes content to a file. step.Pattern is the destination file
-// path (may contain {{uuid}} and {{now}} placeholders); step.Value is the
-// content template. Both uuid and now are injected into vars before resolution
-// so the same UUID appears consistently in path and content.
 func stepWriteFile(e *Executor, step config.Step) error {
 	if step.Pattern == "" {
 		return fmt.Errorf("step 'write_file' requires pattern (file path)")
@@ -213,15 +210,16 @@ func stepWriteFile(e *Executor, step config.Step) error {
 		return fmt.Errorf("step 'write_file' requires value (content)")
 	}
 
-	// Inject uuid and now so templates in both pattern and value see the same values.
-	if err := e.vars.Set("uuid", newUUID()); err != nil {
-		return fmt.Errorf("step 'write_file': set uuid: %w", err)
+	uuid, err := newUUID()
+	if err != nil {
+		return fmt.Errorf("step 'write_file': %w", err)
 	}
-	if err := e.vars.Set("now", time.Now().UTC().Format(time.RFC3339)); err != nil {
-		return fmt.Errorf("step 'write_file': set now: %w", err)
+	extras := map[string]string{
+		"uuid": uuid,
+		"now":  time.Now().UTC().Format(time.RFC3339),
 	}
 
-	path, err := e.resolve(step.Pattern)
+	path, err := e.resolveWith(step.Pattern, extras)
 	if err != nil {
 		return err
 	}
@@ -229,7 +227,7 @@ func stepWriteFile(e *Executor, step config.Step) error {
 		return fmt.Errorf("step 'write_file': pattern resolved to empty path")
 	}
 
-	content, err := e.resolve(step.Value)
+	content, err := e.resolveWith(step.Value, extras)
 	if err != nil {
 		return err
 	}
@@ -251,7 +249,11 @@ func stepHTMLToMarkdown(e *Executor, step config.Step) error {
 	if err != nil {
 		return fmt.Errorf("step 'html_to_markdown': variable %q not set: %w", varName, err)
 	}
-	converter := md.NewConverter("", true, nil)
+	domain := e.inst.BaseURL
+	if u, err := url.Parse(e.inst.BaseURL); err == nil && u.Host != "" {
+		domain = u.Host
+	}
+	converter := md.NewConverter(domain, true, nil)
 	markdown, err := converter.ConvertString(html)
 	if err != nil {
 		return fmt.Errorf("step 'html_to_markdown': %w", err)
@@ -279,9 +281,10 @@ func stepWaitForReply(e *Executor, step config.Step) error {
 		timeout = 300 * time.Second
 	}
 
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
-	deadline := time.Now().Add(timeout)
 
 	for {
 		if data, readErr := os.ReadFile(path); readErr == nil {
@@ -292,18 +295,20 @@ func stepWaitForReply(e *Executor, step config.Step) error {
 			_ = os.Remove(path)
 			return nil
 		}
-		if time.Now().After(deadline) {
+		select {
+		case <-timer.C:
 			return fmt.Errorf("step 'wait_for_reply': timeout waiting for %s", path)
+		case <-ticker.C:
 		}
-		<-ticker.C
 	}
 }
 
-// newUUID returns a random UUID (version 4) using crypto/rand.
-func newUUID() string {
+func newUUID() (string, error) {
 	b := make([]byte, 16)
-	_, _ = rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("newUUID: %w", err)
+	}
 	b[6] = (b[6] & 0x0f) | 0x40 // version 4
 	b[8] = (b[8] & 0x3f) | 0x80 // variant bits
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]), nil
 }

@@ -39,9 +39,9 @@ func (v *Vars) Set(key, value string) error {
 	return nil
 }
 
-// Resolve replaces all {{key}} occurrences in s with their values.
-// Returns an error if an unknown (non-credential) variable is referenced.
-func (v *Vars) Resolve(s string) (string, error) {
+// ResolveWith resolves s using overrides first, then the normal var store.
+// The overrides map is not written to the receiver.
+func (v *Vars) ResolveWith(s string, overrides map[string]string) (string, error) {
 	var resolveErr error
 	result := placeholder.ReplaceAllStringFunc(s, func(match string) string {
 		if resolveErr != nil {
@@ -49,6 +49,9 @@ func (v *Vars) Resolve(s string) (string, error) {
 		}
 		key := strings.TrimPrefix(strings.TrimSuffix(match, "}}"), "{{")
 
+		if val, ok := overrides[key]; ok {
+			return val
+		}
 		if val, ok := v.runtime[key]; ok {
 			return val
 		}
@@ -63,4 +66,10 @@ func (v *Vars) Resolve(s string) (string, error) {
 		return match
 	})
 	return result, resolveErr
+}
+
+// Resolve replaces all {{key}} occurrences in s with their values.
+// Returns an error if an unknown (non-credential) variable is referenced.
+func (v *Vars) Resolve(s string) (string, error) {
+	return v.ResolveWith(s, nil)
 }

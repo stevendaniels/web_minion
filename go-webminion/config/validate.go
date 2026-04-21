@@ -2,8 +2,8 @@ package config
 
 import "fmt"
 
-// ValidateConfig checks a parsed Institution for logical errors.
-func ValidateConfig(inst *Institution) []error {
+// ValidateConfig checks a parsed Config for logical errors.
+func ValidateConfig(inst *Config) []error {
 	var errs []error
 
 	startingCount := 0

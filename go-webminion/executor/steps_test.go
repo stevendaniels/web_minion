@@ -627,6 +627,80 @@ func TestStepHTMLToMarkdown_MissingValue(t *testing.T) {
 	}
 }
 
+func TestStepHTMLToMarkdown_HeadingConversion(t *testing.T) {
+	inst := makeInst(config.Action{
+		Key:      "start",
+		Starting: true,
+		Steps:    []config.Step{{Method: "html_to_markdown", Value: "page_html"}},
+	})
+	ex := newTestExecutor(inst, &fakeDriver{})
+	if err := ex.vars.Set("page_html", "<h1>Hello</h1>"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ex.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result, err := ex.vars.Resolve("{{page_html}}")
+	if err != nil {
+		t.Fatalf("resolve var: %v", err)
+	}
+	if !strings.Contains(result, "# Hello") {
+		t.Errorf("expected heading markdown '# Hello', got: %q", result)
+	}
+}
+
+func TestStepHTMLToMarkdown_LinkText(t *testing.T) {
+	inst := makeInst(config.Action{
+		Key:      "start",
+		Starting: true,
+		Steps:    []config.Step{{Method: "html_to_markdown", Value: "page_html"}},
+	})
+	ex := newTestExecutor(inst, &fakeDriver{})
+	if err := ex.vars.Set("page_html", `<a href="/page">click here</a>`); err != nil {
+		t.Fatal(err)
+	}
+	if err := ex.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result, err := ex.vars.Resolve("{{page_html}}")
+	if err != nil {
+		t.Fatalf("resolve var: %v", err)
+	}
+	if !strings.Contains(result, "click here") {
+		t.Errorf("expected link text in markdown, got: %q", result)
+	}
+	if !strings.Contains(result, "[") {
+		t.Errorf("expected markdown link syntax in output, got: %q", result)
+	}
+}
+
+func TestStepHTMLToMarkdown_AbsoluteURLResolution(t *testing.T) {
+	inst := &config.Config{
+		ID:          "test",
+		BaseURL:     "https://example.com",
+		DownloadDir: "/tmp",
+		Flow: config.Flow{Actions: []config.Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []config.Step{{Method: "html_to_markdown", Value: "page_html"}},
+		}}},
+	}
+	ex := newTestExecutor(inst, &fakeDriver{})
+	if err := ex.vars.Set("page_html", `<a href="/about">about</a>`); err != nil {
+		t.Fatal(err)
+	}
+	if err := ex.Run(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	result, err := ex.vars.Resolve("{{page_html}}")
+	if err != nil {
+		t.Fatalf("resolve var: %v", err)
+	}
+	if !strings.Contains(result, "example.com/about") {
+		t.Errorf("expected absolute URL containing 'example.com/about' in markdown, got: %q", result)
+	}
+}
+
 func TestExecutor_OnFailure_Routing(t *testing.T) {
 	fd := &fakeDriver{}
 	inst := makeInst(

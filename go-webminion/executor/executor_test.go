@@ -42,15 +42,15 @@ func (f *fakeDriver) PageHTML() (string, error)                                {
 func (f *fakeDriver) Eval(script string) error                                 { return nil }
 func (f *fakeDriver) Close() error                                             { return nil }
 
-func makeInst(actions ...config.Action) *config.Institution {
-	return &config.Institution{
+func makeInst(actions ...config.Action) *config.Config {
+	return &config.Config{
 		ID:          "test",
 		DownloadDir: "/tmp",
 		Flow:        config.Flow{Actions: actions},
 	}
 }
 
-func newTestExecutor(inst *config.Institution, d driver.Driver) *Executor {
+func newTestExecutor(inst *config.Config, d driver.Driver) *Executor {
 	return New(inst, d, nil, time.Now(), time.Now())
 }
 

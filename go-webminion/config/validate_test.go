@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestValidateConfig_Valid(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{
@@ -17,7 +17,7 @@ func TestValidateConfig_Valid(t *testing.T) {
 }
 
 func TestValidateConfig_NoStarting(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID:   "test",
 		Flow: Flow{Actions: []Action{{Key: "no_start"}}},
 	}
@@ -28,7 +28,7 @@ func TestValidateConfig_NoStarting(t *testing.T) {
 }
 
 func TestValidateConfig_MultipleStarting(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{
@@ -44,7 +44,7 @@ func TestValidateConfig_MultipleStarting(t *testing.T) {
 }
 
 func TestValidateConfig_DuplicateKeys(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{
@@ -60,7 +60,7 @@ func TestValidateConfig_DuplicateKeys(t *testing.T) {
 }
 
 func TestValidateConfig_NoActions(t *testing.T) {
-	inst := &Institution{ID: "test"}
+	inst := &Config{ID: "test"}
 	errs := ValidateConfig(inst)
 	if len(errs) == 0 {
 		t.Error("expected error for empty actions, got none")
@@ -68,7 +68,7 @@ func TestValidateConfig_NoActions(t *testing.T) {
 }
 
 func TestValidateStep_WriteFile_MissingPattern(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{Actions: []Action{{
 			Key:      "start",
@@ -83,7 +83,7 @@ func TestValidateStep_WriteFile_MissingPattern(t *testing.T) {
 }
 
 func TestValidateStep_WriteFile_MissingValue(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{Actions: []Action{{
 			Key:      "start",
@@ -98,7 +98,7 @@ func TestValidateStep_WriteFile_MissingValue(t *testing.T) {
 }
 
 func TestValidateStep_WaitForReply_MissingPattern(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{Actions: []Action{{
 			Key:      "start",
@@ -113,7 +113,7 @@ func TestValidateStep_WaitForReply_MissingPattern(t *testing.T) {
 }
 
 func TestValidateStep_WaitForReply_MissingValue(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{Actions: []Action{{
 			Key:      "start",
@@ -128,7 +128,7 @@ func TestValidateStep_WaitForReply_MissingValue(t *testing.T) {
 }
 
 func TestValidateStep_WaitForReply_NegativeTimeout(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{Actions: []Action{{
 			Key:      "start",
@@ -143,7 +143,7 @@ func TestValidateStep_WaitForReply_NegativeTimeout(t *testing.T) {
 }
 
 func TestValidateStep_WriteFile_Valid(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{Actions: []Action{{
 			Key:      "start",
@@ -158,7 +158,7 @@ func TestValidateStep_WriteFile_Valid(t *testing.T) {
 }
 
 func TestValidateStep_HTMLToMarkdown_MissingValue(t *testing.T) {
-	inst := &Institution{
+	inst := &Config{
 		ID: "test",
 		Flow: Flow{Actions: []Action{{
 			Key:      "start",
