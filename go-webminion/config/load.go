@@ -17,18 +17,18 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	var inst Config
+	var cfg Config
 	if looksLikeJSON(data) {
-		if err := json.Unmarshal(data, &inst); err != nil {
+		if err := json.Unmarshal(data, &cfg); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := yaml.Unmarshal(data, &inst); err != nil {
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
 			return nil, err
 		}
 	}
 
-	if errs := ValidateConfig(&inst); len(errs) > 0 {
+	if errs := ValidateConfig(&cfg); len(errs) > 0 {
 		msgs := make([]string, len(errs))
 		for i, e := range errs {
 			msgs[i] = e.Error()
@@ -36,7 +36,7 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("invalid config: %s", strings.Join(msgs, "; "))
 	}
 
-	return &inst, nil
+	return &cfg, nil
 }
 
 func looksLikeJSON(data []byte) bool {

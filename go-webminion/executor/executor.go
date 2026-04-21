@@ -15,9 +15,9 @@ import (
 // StepFunc is a handler for a single step method.
 type StepFunc func(e *Executor, step config.Step) error
 
-// Executor runs the flow graph defined in an Institution config.
+// Executor runs the flow graph defined in a Config.
 type Executor struct {
-	inst     *config.Config
+	cfg      *config.Config
 	driver   driver.Driver
 	vault    vault.Vault
 	vars     *interp.Vars
@@ -26,12 +26,12 @@ type Executor struct {
 }
 
 // New creates an Executor. startDate and endDate are used for built-in interpolation vars.
-func New(inst *config.Config, d driver.Driver, v vault.Vault, startDate, endDate time.Time) *Executor {
+func New(cfg *config.Config, d driver.Driver, v vault.Vault, startDate, endDate time.Time) *Executor {
 	return &Executor{
-		inst:     inst,
+		cfg:      cfg,
 		driver:   d,
 		vault:    v,
-		vars:     interp.New(inst.ID, startDate, endDate),
+		vars:     interp.New(cfg.ID, startDate, endDate),
 		registry: newStepRegistry(),
 		visited:  make(map[string]bool),
 	}
@@ -39,7 +39,7 @@ func New(inst *config.Config, d driver.Driver, v vault.Vault, startDate, endDate
 
 // Run executes the flow starting from the starting action.
 func (e *Executor) Run() error {
-	currentKey := findStartingAction(e.inst)
+	currentKey := findStartingAction(e.cfg)
 	if currentKey == "" {
 		return fmt.Errorf("no starting action found")
 	}
@@ -50,7 +50,7 @@ func (e *Executor) Run() error {
 		}
 		e.visited[currentKey] = true
 
-		action := findAction(e.inst, currentKey)
+		action := findAction(e.cfg, currentKey)
 		if action == nil {
 			return fmt.Errorf("action not found: %s", currentKey)
 		}
@@ -84,8 +84,8 @@ func (e *Executor) Run() error {
 	return nil
 }
 
-func findStartingAction(inst *config.Config) string {
-	for _, a := range inst.Flow.Actions {
+func findStartingAction(cfg *config.Config) string {
+	for _, a := range cfg.Flow.Actions {
 		if a.Starting {
 			return a.Key
 		}
@@ -93,10 +93,10 @@ func findStartingAction(inst *config.Config) string {
 	return ""
 }
 
-func findAction(inst *config.Config, key string) *config.Action {
-	for i := range inst.Flow.Actions {
-		if inst.Flow.Actions[i].Key == key {
-			return &inst.Flow.Actions[i]
+func findAction(cfg *config.Config, key string) *config.Action {
+	for i := range cfg.Flow.Actions {
+		if cfg.Flow.Actions[i].Key == key {
+			return &cfg.Flow.Actions[i]
 		}
 	}
 	return nil
@@ -145,7 +145,7 @@ func (e *Executor) evaluateExpects(action *config.Action) bool {
 		}
 		return e.driver.WaitForSelector(sel, 1) == nil
 	case "download_exists":
-		_, err := watcher.Watch(e.inst.DownloadDir, exp.Pattern, 1*time.Second)
+		_, err := watcher.Watch(e.cfg.DownloadDir, exp.Pattern, 1*time.Second)
 		return err == nil
 	}
 	return false

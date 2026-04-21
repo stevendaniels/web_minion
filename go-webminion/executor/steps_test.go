@@ -12,12 +12,12 @@ import (
 
 func runStep(t *testing.T, fd *fakeDriver, step config.Step) error {
 	t.Helper()
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps:    []config.Step{step},
 	})
-	return newTestExecutor(inst, fd).Run()
+	return newTestExecutor(cfg, fd).Run()
 }
 
 func TestStepGo(t *testing.T) {
@@ -75,7 +75,7 @@ func TestStepFillInInput(t *testing.T) {
 
 func TestStepFillInInput_WithInterp(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps: []config.Step{{
@@ -84,7 +84,7 @@ func TestStepFillInInput_WithInterp(t *testing.T) {
 			Value:  "{{today}}",
 		}},
 	})
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +180,7 @@ func TestStepWait(t *testing.T) {
 
 func TestExecutor_Expects_BodyIncludes_Pass(t *testing.T) {
 	fd := &fakeDriver{body: "Welcome"}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -192,7 +192,7 @@ func TestExecutor_Expects_BodyIncludes_Pass(t *testing.T) {
 		config.Action{Key: "end", Steps: []config.Step{}},
 		config.Action{Key: "fail", Steps: []config.Step{}},
 	)
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestExecutor_Expects_BodyIncludes_Pass(t *testing.T) {
 
 func TestExecutor_Expects_URLIncludes(t *testing.T) {
 	fd := &fakeDriver{currentURL: "https://example.com/dashboard"}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -219,7 +219,7 @@ func TestExecutor_Expects_URLIncludes(t *testing.T) {
 		config.Action{Key: "done", Steps: []config.Step{}},
 		config.Action{Key: "fail", Steps: []config.Step{}},
 	)
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestExecutor_Expects_URLIncludes(t *testing.T) {
 
 func TestExecutor_Expects_ElementPresent(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -243,7 +243,7 @@ func TestExecutor_Expects_ElementPresent(t *testing.T) {
 		},
 		config.Action{Key: "done", Steps: []config.Step{}},
 	)
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestExecutor_Expects_ElementPresent(t *testing.T) {
 func TestStepFormatSavedValue(t *testing.T) {
 	fd := &fakeDriver{}
 	// Save a variable first, then format it.
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps: []config.Step{
@@ -260,7 +260,7 @@ func TestStepFormatSavedValue(t *testing.T) {
 			{Method: "format_saved_value", Value: "formatted", Pattern: "prefix-{{raw}}"},
 		},
 	})
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func TestStepFormatSavedValue_NoKey(t *testing.T) {
 
 func TestStepWaitForDownload_Timeout(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps: []config.Step{{
@@ -286,8 +286,8 @@ func TestStepWaitForDownload_Timeout(t *testing.T) {
 	})
 	// DownloadDir defaults to "" which means the watcher will try to scan ""
 	// Override with a known-empty temp dir
-	inst.DownloadDir = t.TempDir()
-	ex := newTestExecutor(inst, fd)
+	cfg.DownloadDir = t.TempDir()
+	ex := newTestExecutor(cfg, fd)
 	// Should fail (timeout) since no file appears
 	if err := ex.Run(); err == nil {
 		t.Error("expected timeout error from wait_for_download, got nil")
@@ -338,8 +338,8 @@ func TestStepFillInInput_NoTarget(t *testing.T) {
 
 func TestExecutor_NoStartingAction(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst() // no actions
-	ex := newTestExecutor(inst, fd)
+	cfg := makeConfig() // no actions
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err == nil {
 		t.Error("expected error for missing starting action, got nil")
 	}
@@ -347,7 +347,7 @@ func TestExecutor_NoStartingAction(t *testing.T) {
 
 func TestExecutor_Expects_UnknownType(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -359,7 +359,7 @@ func TestExecutor_Expects_UnknownType(t *testing.T) {
 		config.Action{Key: "pass", Steps: []config.Step{}},
 		config.Action{Key: "fail", Steps: []config.Step{}},
 	)
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +370,7 @@ func TestExecutor_Expects_UnknownType(t *testing.T) {
 
 func TestExecutor_Expects_ElementPresent_NilTarget(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -382,7 +382,7 @@ func TestExecutor_Expects_ElementPresent_NilTarget(t *testing.T) {
 		config.Action{Key: "pass"},
 		config.Action{Key: "fail"},
 	)
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -393,7 +393,7 @@ func TestExecutor_Expects_ElementPresent_NilTarget(t *testing.T) {
 
 func TestExecutor_Expects_DownloadExists_Timeout(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -405,8 +405,8 @@ func TestExecutor_Expects_DownloadExists_Timeout(t *testing.T) {
 		config.Action{Key: "pass"},
 		config.Action{Key: "fail"},
 	)
-	inst.DownloadDir = t.TempDir() // empty dir, no file
-	ex := newTestExecutor(inst, fd)
+	cfg.DownloadDir = t.TempDir() // empty dir, no file
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -417,7 +417,7 @@ func TestExecutor_Expects_DownloadExists_Timeout(t *testing.T) {
 
 func TestExecutor_Expects_BodyIncludes_NoMatch(t *testing.T) {
 	fd := &fakeDriver{body: "Welcome"}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -429,7 +429,7 @@ func TestExecutor_Expects_BodyIncludes_NoMatch(t *testing.T) {
 		config.Action{Key: "pass"},
 		config.Action{Key: "fail"},
 	)
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -567,7 +567,7 @@ func TestStepWaitForReply_FileAppears(t *testing.T) {
 	}()
 
 	fd := &fakeDriver{}
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps: []config.Step{{
@@ -577,7 +577,7 @@ func TestStepWaitForReply_FileAppears(t *testing.T) {
 			Timeout: 5,
 		}},
 	})
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -599,7 +599,7 @@ func TestStepWaitForReply_FileAppears(t *testing.T) {
 
 func TestStepHTMLToMarkdown(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps: []config.Step{
@@ -607,7 +607,7 @@ func TestStepHTMLToMarkdown(t *testing.T) {
 			{Method: "html_to_markdown", Value: "page_html"},
 		},
 	})
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -628,12 +628,12 @@ func TestStepHTMLToMarkdown_MissingValue(t *testing.T) {
 }
 
 func TestStepHTMLToMarkdown_HeadingConversion(t *testing.T) {
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps:    []config.Step{{Method: "html_to_markdown", Value: "page_html"}},
 	})
-	ex := newTestExecutor(inst, &fakeDriver{})
+	ex := newTestExecutor(cfg, &fakeDriver{})
 	if err := ex.vars.Set("page_html", "<h1>Hello</h1>"); err != nil {
 		t.Fatal(err)
 	}
@@ -650,12 +650,12 @@ func TestStepHTMLToMarkdown_HeadingConversion(t *testing.T) {
 }
 
 func TestStepHTMLToMarkdown_LinkText(t *testing.T) {
-	inst := makeInst(config.Action{
+	cfg := makeConfig(config.Action{
 		Key:      "start",
 		Starting: true,
 		Steps:    []config.Step{{Method: "html_to_markdown", Value: "page_html"}},
 	})
-	ex := newTestExecutor(inst, &fakeDriver{})
+	ex := newTestExecutor(cfg, &fakeDriver{})
 	if err := ex.vars.Set("page_html", `<a href="/page">click here</a>`); err != nil {
 		t.Fatal(err)
 	}
@@ -675,7 +675,7 @@ func TestStepHTMLToMarkdown_LinkText(t *testing.T) {
 }
 
 func TestStepHTMLToMarkdown_AbsoluteURLResolution(t *testing.T) {
-	inst := &config.Config{
+	cfg := &config.Config{
 		ID:          "test",
 		BaseURL:     "https://example.com",
 		DownloadDir: "/tmp",
@@ -685,7 +685,7 @@ func TestStepHTMLToMarkdown_AbsoluteURLResolution(t *testing.T) {
 			Steps:    []config.Step{{Method: "html_to_markdown", Value: "page_html"}},
 		}}},
 	}
-	ex := newTestExecutor(inst, &fakeDriver{})
+	ex := newTestExecutor(cfg, &fakeDriver{})
 	if err := ex.vars.Set("page_html", `<a href="/about">about</a>`); err != nil {
 		t.Fatal(err)
 	}
@@ -703,7 +703,7 @@ func TestStepHTMLToMarkdown_AbsoluteURLResolution(t *testing.T) {
 
 func TestExecutor_OnFailure_Routing(t *testing.T) {
 	fd := &fakeDriver{}
-	inst := makeInst(
+	cfg := makeConfig(
 		config.Action{
 			Key:       "start",
 			Starting:  true,
@@ -712,11 +712,88 @@ func TestExecutor_OnFailure_Routing(t *testing.T) {
 		},
 		config.Action{Key: "recover", Steps: []config.Step{}},
 	)
-	ex := newTestExecutor(inst, fd)
+	ex := newTestExecutor(cfg, fd)
 	if err := ex.Run(); err != nil {
 		t.Fatalf("expected OnFailure routing, got error: %v", err)
 	}
 	if !ex.visited["recover"] {
 		t.Error("expected 'recover' action to be visited after failure")
+	}
+}
+
+const richHTML = `<!DOCTYPE html>
+<html>
+<head><title>The Art of Bread Baking</title></head>
+<body>
+<nav id="site-nav"><ul><li><a href="/">Home</a></li><li><a href="/about">About</a></li></ul></nav>
+<main>
+  <article>
+    <h1>The Art of Bread Baking</h1>
+    <p>Bread baking is an ancient craft combining simple ingredients into something complex. The process starts with flour, water, yeast, and salt.</p>
+    <p>Understanding gluten development is key to a good loaf. When flour and water combine, proteins form gluten networks that give bread its structure.</p>
+    <p>Temperature control throughout fermentation dramatically changes the flavor profile of the final loaf.</p>
+  </article>
+</main>
+<footer id="site-footer"><p>Copyright 2024 Bakery News</p></footer>
+</body>
+</html>`
+
+func TestStepExtractReadable_MissingValue(t *testing.T) {
+	fd := &fakeDriver{}
+	if err := runStep(t, fd, config.Step{Method: "extract_readable"}); err == nil {
+		t.Error("expected error for missing value, got nil")
+	}
+}
+
+func TestStepExtractReadable(t *testing.T) {
+	cfg := makeConfig(config.Action{
+		Key:      "start",
+		Starting: true,
+		Steps: []config.Step{
+			{Method: "save_page_html", Value: "content"},
+			{Method: "extract_readable", Value: "content"},
+		},
+	})
+	fd := &fakeDriver{pageHTML: richHTML, currentURL: "https://example.com/article"}
+	ex := newTestExecutor(cfg, fd)
+	if err := ex.Run(); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	result, err := ex.vars.Resolve("{{content}}")
+	if err != nil {
+		t.Fatalf("could not resolve content var: %v", err)
+	}
+	if strings.Contains(result, "site-nav") {
+		t.Errorf("extracted HTML should not contain nav boilerplate, got: %q", result)
+	}
+	if !strings.Contains(result, "Bread baking") {
+		t.Errorf("extracted HTML should contain article text, got: %q", result)
+	}
+}
+
+func TestStepExtractReadable_Pipeline(t *testing.T) {
+	cfg := makeConfig(config.Action{
+		Key:      "start",
+		Starting: true,
+		Steps: []config.Step{
+			{Method: "save_page_html", Value: "content"},
+			{Method: "extract_readable", Value: "content"},
+			{Method: "html_to_markdown", Value: "content"},
+		},
+	})
+	fd := &fakeDriver{pageHTML: richHTML, currentURL: "https://example.com/article"}
+	ex := newTestExecutor(cfg, fd)
+	if err := ex.Run(); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	result, err := ex.vars.Resolve("{{content}}")
+	if err != nil {
+		t.Fatalf("could not resolve content var: %v", err)
+	}
+	if strings.Contains(result, "<") {
+		t.Errorf("markdown output should contain no HTML tags, got: %q", result)
+	}
+	if !strings.Contains(result, "Bread baking") {
+		t.Errorf("markdown should contain article text, got: %q", result)
 	}
 }

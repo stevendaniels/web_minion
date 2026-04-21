@@ -3,12 +3,12 @@ package config
 import "fmt"
 
 // ValidateConfig checks a parsed Config for logical errors.
-func ValidateConfig(inst *Config) []error {
+func ValidateConfig(cfg *Config) []error {
 	var errs []error
 
 	startingCount := 0
 	seen := make(map[string]bool)
-	for _, action := range inst.Flow.Actions {
+	for _, action := range cfg.Flow.Actions {
 		if action.Starting {
 			startingCount++
 		}
@@ -24,7 +24,7 @@ func ValidateConfig(inst *Config) []error {
 		errs = append(errs, fmt.Errorf("multiple starting actions defined"))
 	}
 
-	for _, action := range inst.Flow.Actions {
+	for _, action := range cfg.Flow.Actions {
 		for i, step := range action.Steps {
 			errs = append(errs, validateStep(action.Key, i, step)...)
 		}
@@ -57,6 +57,10 @@ func validateStep(actionKey string, idx int, step Step) []error {
 		}
 		if step.Timeout < 0 {
 			errs = append(errs, fmt.Errorf("%s: timeout must be >= 0", loc))
+		}
+	case "extract_readable":
+		if step.Value == "" {
+			errs = append(errs, fmt.Errorf("%s: value (variable name) is required", loc))
 		}
 	}
 	return errs

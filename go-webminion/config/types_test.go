@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestConfigTypes(t *testing.T) {
-	inst := &Config{
+	cfg := &Config{
 		ID: "test",
 		Flow: Flow{
 			Actions: []Action{
@@ -15,10 +15,10 @@ func TestConfigTypes(t *testing.T) {
 			},
 		},
 	}
-	if inst.ID != "test" {
-		t.Errorf("expected ID 'test', got '%s'", inst.ID)
+	if cfg.ID != "test" {
+		t.Errorf("expected ID 'test', got '%s'", cfg.ID)
 	}
-	if len(inst.Flow.Actions) != 1 {
-		t.Errorf("expected 1 action, got %d", len(inst.Flow.Actions))
+	if len(cfg.Flow.Actions) != 1 {
+		t.Errorf("expected 1 action, got %d", len(cfg.Flow.Actions))
 	}
 }
