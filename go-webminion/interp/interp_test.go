@@ -59,3 +59,50 @@ func TestVars_UnknownVarReturnsError(t *testing.T) {
 		t.Error("expected error for unknown variable, got nil")
 	}
 }
+
+func TestVars_ResolveWith_OverrideTakesPrecedence(t *testing.T) {
+	v := New("test_flow", time.Now(), time.Now())
+	if err := v.Set("key", "from_runtime"); err != nil {
+		t.Fatal(err)
+	}
+	result, err := v.ResolveWith("{{key}}", map[string]string{"key": "from_override"})
+	if err != nil {
+		t.Fatalf("ResolveWith error: %v", err)
+	}
+	if result != "from_override" {
+		t.Errorf("expected override to win, got %q", result)
+	}
+	// Confirm runtime was not mutated.
+	runtime, _ := v.Resolve("{{key}}")
+	if runtime != "from_runtime" {
+		t.Errorf("ResolveWith should not mutate runtime, got %q", runtime)
+	}
+}
+
+func TestVars_ResolveWith_FallsBackToRuntime(t *testing.T) {
+	v := New("test_flow", time.Now(), time.Now())
+	if err := v.Set("key", "runtime_val"); err != nil {
+		t.Fatal(err)
+	}
+	result, err := v.ResolveWith("{{key}}", map[string]string{"other": "x"})
+	if err != nil {
+		t.Fatalf("ResolveWith error: %v", err)
+	}
+	if result != "runtime_val" {
+		t.Errorf("expected fallback to runtime, got %q", result)
+	}
+}
+
+func TestVars_ResolveWith_NilOverrides(t *testing.T) {
+	v := New("test_flow", time.Now(), time.Now())
+	if err := v.Set("key", "val"); err != nil {
+		t.Fatal(err)
+	}
+	result, err := v.ResolveWith("{{key}}", nil)
+	if err != nil {
+		t.Fatalf("ResolveWith(nil) error: %v", err)
+	}
+	if result != "val" {
+		t.Errorf("expected 'val', got %q", result)
+	}
+}

@@ -11,13 +11,13 @@ import (
 )
 
 // LoadConfig reads and parses a config file, auto-detecting YAML vs JSON.
-func LoadConfig(path string) (*Institution, error) {
+func LoadConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var inst Institution
+	var inst Config
 	if looksLikeJSON(data) {
 		if err := json.Unmarshal(data, &inst); err != nil {
 			return nil, err

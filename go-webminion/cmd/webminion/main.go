@@ -52,12 +52,10 @@ func cmdRun(configPath, driverName, vaultType string, headless bool, startDateSt
 		return fmt.Errorf("--config is required")
 	}
 
-	inst, err := webminion.LoadConfig(configPath)
+	flow, err := webminion.NewFlow(configPath)
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
-
-	flow := webminion.NewFlow(inst)
 
 	if startDateStr != "" || endDateStr != "" {
 		start, end, err := parseDateRange(startDateStr, endDateStr)
@@ -91,8 +89,7 @@ func cmdValidate(configPath string) error {
 	if configPath == "" {
 		return fmt.Errorf("--config is required")
 	}
-	_, err := webminion.LoadConfig(configPath)
-	if err != nil {
+	if _, err := webminion.NewFlow(configPath); err != nil {
 		return err
 	}
 	fmt.Println("config is valid")

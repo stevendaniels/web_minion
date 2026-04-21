@@ -42,15 +42,15 @@ func (f *fakeDriver) PageHTML() (string, error)                                {
 func (f *fakeDriver) Eval(script string) error                                 { return nil }
 func (f *fakeDriver) Close() error                                             { return nil }
 
-func makeInst(actions ...config.Action) *config.Institution {
-	return &config.Institution{
+func makeInst(actions ...config.Action) *config.Config {
+	return &config.Config{
 		ID:          "test",
 		DownloadDir: "/tmp",
 		Flow:        config.Flow{Actions: actions},
 	}
 }
 
-func newTestExecutor(inst *config.Institution, d driver.Driver) *Executor {
+func newTestExecutor(inst *config.Config, d driver.Driver) *Executor {
 	return New(inst, d, nil, time.Now(), time.Now())
 }
 
@@ -133,6 +133,7 @@ func TestStepRegistry_HasAllMethods(t *testing.T) {
 		"go", "get_form", "fill_in_input", "click", "submit",
 		"select", "save_value", "format_saved_value", "wait_for_download",
 		"wait", "execute_script", "save_page_html",
+		"write_file", "html_to_markdown", "wait_for_reply",
 	}
 	for _, method := range expected {
 		if _, ok := registry[method]; !ok {

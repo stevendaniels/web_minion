@@ -6,10 +6,12 @@ cl_testing_html.html
 *.swp
 /.bundle/
 /.yardoc
-/Gemfile.lock
+ruby/webminion/Gemfile.lock
 /_yardoc/
 /coverage/
 /doc/
 /pkg/
 /spec/reports/
 /tmp/
+.claude
+docs/plans
