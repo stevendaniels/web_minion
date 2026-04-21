@@ -25,12 +25,12 @@ flow:
 		t.Fatal(err)
 	}
 
-	inst, err := LoadConfig(configPath)
+	cfg, err := LoadConfig(configPath)
 	if err != nil {
 		t.Fatalf("LoadConfig error: %v", err)
 	}
-	if inst.ID != "test" {
-		t.Errorf("expected ID 'test', got '%s'", inst.ID)
+	if cfg.ID != "test" {
+		t.Errorf("expected ID 'test', got '%s'", cfg.ID)
 	}
 }
 
@@ -55,12 +55,12 @@ func TestLoadConfigJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	inst, err := LoadConfig(configPath)
+	cfg, err := LoadConfig(configPath)
 	if err != nil {
 		t.Fatalf("LoadConfig error: %v", err)
 	}
-	if inst.ID != "test" {
-		t.Errorf("expected ID 'test', got '%s'", inst.ID)
+	if cfg.ID != "test" {
+		t.Errorf("expected ID 'test', got '%s'", cfg.ID)
 	}
 }
 

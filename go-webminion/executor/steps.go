@@ -10,9 +10,11 @@ import (
 	"time"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
+	readability "codeberg.org/readeck/go-readability/v2"
 	"github.com/stevendaniels/web_minion/go-webminion/config"
 	"github.com/stevendaniels/web_minion/go-webminion/driver"
 	"github.com/stevendaniels/web_minion/go-webminion/watcher"
+	gohtml "golang.org/x/net/html"
 )
 
 func newStepRegistry() map[string]StepFunc {
@@ -32,6 +34,7 @@ func newStepRegistry() map[string]StepFunc {
 		"write_file":         stepWriteFile,
 		"html_to_markdown":   stepHTMLToMarkdown,
 		"wait_for_reply":     stepWaitForReply,
+		"extract_readable":   stepExtractReadable,
 	}
 }
 
@@ -72,7 +75,7 @@ func stepFillInInput(e *Executor, step config.Step) error {
 			return fmt.Errorf("credential %q referenced but no vault configured", value)
 		}
 		key := value[2 : len(value)-2] // strip {{ }}
-		value, err = e.vault.Get(e.inst.ID, key)
+		value, err = e.vault.Get(e.cfg.ID, key)
 		if err != nil {
 			return err
 		}
@@ -160,7 +163,7 @@ func stepWaitForDownload(e *Executor, step config.Step) error {
 	if pattern == "" {
 		pattern = "*"
 	}
-	_, err := watcher.Watch(e.inst.DownloadDir, pattern, timeout)
+	_, err := watcher.Watch(e.cfg.DownloadDir, pattern, timeout)
 	return err
 }
 
@@ -249,8 +252,8 @@ func stepHTMLToMarkdown(e *Executor, step config.Step) error {
 	if err != nil {
 		return fmt.Errorf("step 'html_to_markdown': variable %q not set: %w", varName, err)
 	}
-	domain := e.inst.BaseURL
-	if u, err := url.Parse(e.inst.BaseURL); err == nil && u.Host != "" {
+	domain := e.cfg.BaseURL
+	if u, err := url.Parse(e.cfg.BaseURL); err == nil && u.Host != "" {
 		domain = u.Host
 	}
 	converter := md.NewConverter(domain, true, nil)
@@ -301,6 +304,37 @@ func stepWaitForReply(e *Executor, step config.Step) error {
 		case <-ticker.C:
 		}
 	}
+}
+
+func stepExtractReadable(e *Executor, step config.Step) error {
+	varName := step.Value
+	if varName == "" {
+		return fmt.Errorf("step 'extract_readable' requires value (variable name)")
+	}
+	raw, err := e.resolve("{{" + varName + "}}")
+	if err != nil {
+		return fmt.Errorf("step 'extract_readable': variable %q not set: %w", varName, err)
+	}
+
+	rawURL, _ := e.driver.CurrentURL()
+	pageURL, _ := url.Parse(rawURL)
+
+	doc, err := gohtml.Parse(strings.NewReader(raw))
+	if err != nil {
+		return fmt.Errorf("step 'extract_readable': parse HTML: %w", err)
+	}
+
+	article, err := readability.FromDocument(doc, pageURL)
+	if err != nil {
+		return fmt.Errorf("step 'extract_readable': %w", err)
+	}
+
+	var buf strings.Builder
+	if err := article.RenderHTML(&buf); err != nil {
+		return fmt.Errorf("step 'extract_readable': render: %w", err)
+	}
+
+	return e.vars.Set(varName, buf.String())
 }
 
 func newUUID() (string, error) {

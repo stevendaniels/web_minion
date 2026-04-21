@@ -13,19 +13,19 @@ import (
 
 // Flow wraps a validated config and is the primary entry point for running automations.
 type Flow struct {
-	inst      *config.Config
+	cfg       *config.Config
 	startDate time.Time
 	endDate   time.Time
 }
 
 // NewFlow loads and validates a YAML or JSON config file, returning a runnable Flow.
 func NewFlow(path string) (*Flow, error) {
-	inst, err := config.LoadConfig(path)
+	cfg, err := config.LoadConfig(path)
 	if err != nil {
 		return nil, err
 	}
 	now := time.Now()
-	return &Flow{inst: inst, startDate: now, endDate: now}, nil
+	return &Flow{cfg: cfg, startDate: now, endDate: now}, nil
 }
 
 // WithDateRange sets the start and end dates used for built-in interpolation variables.
@@ -37,6 +37,6 @@ func (f *Flow) WithDateRange(start, end time.Time) *Flow {
 
 // Run executes the automation flow using the provided driver and vault.
 func (f *Flow) Run(d driver.Driver, v vault.Vault) error {
-	ex := executor.New(f.inst, d, v, f.startDate, f.endDate)
+	ex := executor.New(f.cfg, d, v, f.startDate, f.endDate)
 	return ex.Run()
 }
