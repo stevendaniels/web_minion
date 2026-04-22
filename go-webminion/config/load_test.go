@@ -20,6 +20,8 @@ flow:
       starting: true
       steps:
         - method: go
+        - method: body_includes
+          is_validator: true
 `
 	if err := os.WriteFile(configPath, []byte(yamlContent), 0644); err != nil {
 		t.Fatal(err)
@@ -47,7 +49,7 @@ func TestLoadConfigJSON(t *testing.T) {
 			"actions": [{
 				"key": "test_action",
 				"starting": true,
-				"steps": [{"method": "go"}]
+				"steps": [{"method": "go"}, {"method": "body_includes", "is_validator": true}]
 			}]
 		}
 	}`

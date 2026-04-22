@@ -15,6 +15,8 @@ flow:
       steps:
         - method: go
           value: https://example.com
+        - method: body_includes
+          is_validator: true
 `
 
 func writeConfig(t *testing.T, content string) string {

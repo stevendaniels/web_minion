@@ -22,7 +22,11 @@ flow:
   actions:
     - key: start
       starting: true
-      steps: []
+      steps:
+        - method: go
+          value: https://example.com
+        - method: body_includes
+          is_validator: true
 `)
 	err := run([]string{"--command", "validate", "--config", p})
 	if err != nil {
