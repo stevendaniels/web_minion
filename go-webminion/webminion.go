@@ -16,6 +16,7 @@ type Flow struct {
 	cfg       *config.Config
 	startDate time.Time
 	endDate   time.Time
+	args      map[string]string
 }
 
 // NewFlow loads and validates a YAML or JSON config file, returning a runnable Flow.
@@ -35,8 +36,21 @@ func (f *Flow) WithDateRange(start, end time.Time) *Flow {
 	return f
 }
 
+// WithArgs supplies runtime arguments for placeholder variables in the flow.
+// These override any empty-value entries in the config's vars map.
+func (f *Flow) WithArgs(args map[string]string) *Flow {
+	f.args = args
+	return f
+}
+
+// RequiredArgs returns the placeholder names that must be supplied via WithArgs
+// before calling Run. Built-ins, credentials, and vars with static defaults are excluded.
+func (f *Flow) RequiredArgs() []string {
+	return config.RequiredArgs(f.cfg)
+}
+
 // Run executes the automation flow using the provided driver and vault.
 func (f *Flow) Run(d driver.Driver, v vault.Vault) error {
-	ex := executor.New(f.cfg, d, v, f.startDate, f.endDate)
+	ex := executor.New(f.cfg, d, v, f.startDate, f.endDate, f.args)
 	return ex.Run()
 }

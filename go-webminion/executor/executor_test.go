@@ -57,7 +57,28 @@ func makeConfig(actions ...config.Action) *config.Config {
 }
 
 func newTestExecutor(cfg *config.Config, d driver.Driver) *Executor {
-	return New(cfg, d, nil, time.Now(), time.Now())
+	return New(cfg, d, nil, time.Now(), time.Now(), nil)
+}
+
+func TestExecutor_Run_PlaceholderArg(t *testing.T) {
+	fd := &fakeDriver{}
+	cfg := &config.Config{
+		ID:   "test",
+		Vars: map[string]string{"url": ""},
+		Flow: config.Flow{Actions: []config.Action{{
+			Key:      "start",
+			Starting: true,
+			Steps:    []config.Step{{Method: "go", Value: "{{url}}"}},
+		}}},
+	}
+
+	ex := New(cfg, fd, nil, time.Now(), time.Now(), map[string]string{"url": "https://example.com"})
+	if err := ex.Run(); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	if len(fd.navigated) != 1 || fd.navigated[0] != "https://example.com" {
+		t.Errorf("expected Navigate(https://example.com), got %v", fd.navigated)
+	}
 }
 
 func TestExecutor_Run_SingleAction(t *testing.T) {

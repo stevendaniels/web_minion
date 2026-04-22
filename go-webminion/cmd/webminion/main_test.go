@@ -16,8 +16,7 @@ func writeConfig(t *testing.T, content string) string {
 	return p
 }
 
-func TestCommandValidate(t *testing.T) {
-	p := writeConfig(t, `id: test
+const validFlowYAML = `id: test
 flow:
   actions:
     - key: start
@@ -27,9 +26,11 @@ flow:
           value: https://example.com
         - method: body_includes
           is_validator: true
-`)
-	err := run([]string{"--command", "validate", "--config", p})
-	if err != nil {
+`
+
+func TestCommandValidate(t *testing.T) {
+	p := writeConfig(t, validFlowYAML)
+	if err := run([]string{"validate", "--config", p}); err != nil {
 		t.Fatalf("validate error: %v", err)
 	}
 }
@@ -39,21 +40,56 @@ func TestCommandValidate_BadConfig(t *testing.T) {
 flow:
   actions: []
 `)
-	err := run([]string{"--command", "validate", "--config", p})
-	if err == nil {
+	if err := run([]string{"validate", "--config", p}); err == nil {
 		t.Error("expected error for invalid config (no starting action), got nil")
 	}
 }
 
 func TestCommandUnknown(t *testing.T) {
-	if err := run([]string{"--command", "foobar"}); err == nil {
-		t.Error("expected error for unknown command, got nil")
+	if err := run([]string{"foobar"}); err == nil {
+		t.Error("expected error for unknown subcommand, got nil")
 	}
 }
 
-func TestCommandMissingCommand(t *testing.T) {
+func TestCommandMissingSubcommand(t *testing.T) {
 	if err := run([]string{}); err == nil {
-		t.Error("expected error when --command is missing, got nil")
+		t.Error("expected error when subcommand is missing, got nil")
+	}
+}
+
+func TestCommandHelp(t *testing.T) {
+	p := writeConfig(t, `id: test
+vars:
+  url: ""
+flow:
+  actions:
+    - key: start
+      starting: true
+      steps:
+        - method: go
+          value: "{{url}}"
+        - method: body_includes
+          is_validator: true
+`)
+	if err := run([]string{"help", "--config", p}); err != nil {
+		t.Fatalf("help error: %v", err)
+	}
+}
+
+func TestCommandRun_EnvFile(t *testing.T) {
+	envPath := filepath.Join(t.TempDir(), ".env")
+	if err := os.WriteFile(envPath, []byte("MY_VAR=hello\n# comment\n\nOTHER=world\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	pairs, err := parseEnvFile(envPath)
+	if err != nil {
+		t.Fatalf("parseEnvFile error: %v", err)
+	}
+	if pairs["MY_VAR"] != "hello" {
+		t.Errorf("expected MY_VAR=hello, got %q", pairs["MY_VAR"])
+	}
+	if pairs["OTHER"] != "world" {
+		t.Errorf("expected OTHER=world, got %q", pairs["OTHER"])
 	}
 }
 
