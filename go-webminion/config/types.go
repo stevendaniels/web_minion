@@ -2,15 +2,16 @@ package config
 
 // Config is the top-level config for a single automation target.
 type Config struct {
-	ID                  string `yaml:"id"                    json:"id"`
-	Name                string `yaml:"name"                  json:"name"`
-	BaseURL             string `yaml:"base_url"              json:"base_url"`
-	ProfileDir          string `yaml:"profile_dir"           json:"profile_dir"`
-	DownloadDir         string `yaml:"download_dir"          json:"download_dir"`
-	ScreenshotOnFailure bool   `yaml:"screenshot_on_failure" json:"screenshot_on_failure"`
-	MaxRetries          int    `yaml:"max_retries"           json:"max_retries"`
-	Flow                Flow   `yaml:"flow"                  json:"flow"`
-	Output              Output `yaml:"output"                json:"output"`
+	ID                  string            `yaml:"id"                    json:"id"`
+	Name                string            `yaml:"name"                  json:"name"`
+	BaseURL             string            `yaml:"base_url"              json:"base_url"`
+	ProfileDir          string            `yaml:"profile_dir"           json:"profile_dir"`
+	DownloadDir         string            `yaml:"download_dir"          json:"download_dir"`
+	ScreenshotOnFailure bool              `yaml:"screenshot_on_failure" json:"screenshot_on_failure"`
+	MaxRetries          int               `yaml:"max_retries"           json:"max_retries"`
+	Flow                Flow              `yaml:"flow"                  json:"flow"`
+	Output              Output            `yaml:"output"                json:"output"`
+	Vars                map[string]string `yaml:"vars"                  json:"vars"`
 }
 
 // Flow holds the ordered list of actions that make up an automation flow.
@@ -40,6 +41,7 @@ type Step struct {
 	Pattern       string     `yaml:"pattern"        json:"pattern"`
 	Timeout       int        `yaml:"timeout"        json:"timeout"`
 	RetainElement bool       `yaml:"retain_element" json:"retain_element"`
+	IsValidator   bool       `yaml:"is_validator"   json:"is_validator"`
 }
 
 // Selector identifies a DOM element via one of several strategies.
