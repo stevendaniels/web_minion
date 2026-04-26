@@ -26,12 +26,22 @@ type Executor struct {
 }
 
 // New creates an Executor. startDate and endDate are used for built-in interpolation vars.
-func New(cfg *config.Config, d driver.Driver, v vault.Vault, startDate, endDate time.Time) *Executor {
+// args supplies runtime values for placeholder variables; they override config.Vars defaults.
+func New(cfg *config.Config, d driver.Driver, v vault.Vault, startDate, endDate time.Time, args map[string]string) *Executor {
+	vars := interp.New(cfg.ID, startDate, endDate)
+	for k, val := range cfg.Vars {
+		if val != "" {
+			vars.Set(k, val) //nolint:errcheck
+		}
+	}
+	for k, val := range args {
+		vars.Set(k, val) //nolint:errcheck
+	}
 	return &Executor{
 		cfg:      cfg,
 		driver:   d,
 		vault:    v,
-		vars:     interp.New(cfg.ID, startDate, endDate),
+		vars:     vars,
 		registry: newStepRegistry(),
 		visited:  make(map[string]bool),
 	}
